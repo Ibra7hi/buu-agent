@@ -1,15 +1,16 @@
 # RAG Intelligence: Enterprise AI Assistant
 
-A production-ready Retrieval-Augmented Generation (RAG) system built with **LangChain**, **FastAPI**, **ChromaDB**, and **Next.js**. This project allows you to index your own PDF/Web documents and query them securely using either entirely local models or lightning-fast cloud APIs.
+A production-ready Retrieval-Augmented Generation (RAG) system built with **LangChain**, **FastAPI**, **PGVector**, and **Next.js**. This project allows you to index your own PDF/Web documents and query them using either entirely local models or lightning-fast cloud APIs.
 
 ---
 
 ## 🏗 Tech Stack
 
 *   **LLM Providers:** [Ollama](https://ollama.com/) (Local) OR [OpenRouter](https://openrouter.ai/) (Cloud API)
-*   **Embeddings:** Nomic Embed Text (Local via Ollama)
+*   **Embeddings:** Nomic Embed Text v2 (Local via Ollama)
 *   **AI Logic:** [LangChain](https://www.langchain.com/) & LangGraph (ReAct Agent)
-*   **Vector Database:** [ChromaDB](https://www.trychroma.com/) (Running via Docker)
+*   **Tool Protocol:** [MCP](https://modelcontextprotocol.io/) (Model Context Protocol)
+*   **Vector Database:** [PGVector](https://github.com/pgvector/pgvector) (Running via Docker)
 *   **Backend API:** [FastAPI](https://fastapi.tiangolo.com/) (Python)
 *   **Frontend UI:** [Next.js](https://nextjs.org/) (React, Tailwind CSS, Framer Motion)
 
@@ -19,85 +20,113 @@ A production-ready Retrieval-Augmented Generation (RAG) system built with **Lang
 
 ```text
 RAG/
-├── docker-compose.yml       # Sets up the ChromaDB container
-├── requirements.txt         # Python dependencies
-├── app.py                   # FastAPI Server (The main Backend)
-├── index_data.py            # Script to load, chunk & index PDFs into ChromaDB
-├── reset_db.py              # Script to wipe the database clean
+├── .env.example                 # Environment variable template
+├── requirements.txt             # Python dependencies
+├── docker-compose.yml           # PostgreSQL + pgvector container
+├── README.md
 │
-├── rag/                     # Core LangChain Logic
-│   ├── document_loader.py   # Extracts text from PDFs & Web URLs
-│   ├── indexing.py          # Chunks text & stores vectors
-│   ├── retrieval.py         # The tool the AI uses to search the DB
-│   ├── generator.py         # LangGraph ReAct Agent setup
-│   ├── db_connection.py     # Connects to ChromaDB
-│   └── api_models.py        # Cloud Model Configuration (OpenRouter)
+├── docs/                        # 📄 Documents for indexing
+│   ├── fake_company.pdf
+│   ├── hima.pdf
+│   └── math.pdf
 │
-└── frontend/                # Next.js UI Application
-    ├── src/app/page.tsx     # Main chat interface
-    └── src/app/globals.css  # UI Styling (Apple/Google design principles)
+├── scripts/                     # 🔧 CLI utilities
+│   ├── index_data.py            # Index PDFs into the vector database
+│   ├── reset_db.py              # Wipe the database clean
+│   └── clean_cache.py           # Clear the semantic cache only
+│
+├── src/                         # 🐍 Application source code
+│   ├── server/                  # Entry points
+│   │   ├── app.py               # FastAPI orchestrator (the main backend)
+│   │   └── mcp_server.py        # MCP tool server (RAG tools)
+│   │
+│   ├── core/                    # Core RAG pipeline
+│   │   ├── db_connection.py     # PGVector connection factory
+│   │   ├── document_loader.py   # PDF/Web document ingestion
+│   │   ├── indexing.py          # Semantic chunking & vector indexing
+│   │   ├── retrieval.py         # Retrieval tool (with FlashRank reranker)
+│   │   ├── hybrid_retriever.py  # BM25 + Semantic hybrid search
+│   │   ├── query_rewriter.py    # LLM-based query optimization
+│   │   └── cache.py             # PostgreSQL-backed semantic cache
+│   │
+│   ├── models/                  # LLM & embedding configuration
+│   │   └── api_models.py        # OpenRouter / Ollama model factories
+│   │
+│   └── config/                  # Centralized settings
+│       └── settings.py          # All constants & env vars in one place
+│
+└── frontend/                    # 🌐 Next.js UI application
+    ├── src/app/page.tsx         # Main chat interface
+    └── src/app/globals.css      # UI styling
 ```
 
 ---
 
 ## 🛠 Prerequisites
 
-Before running the project, ensure you have the following installed:
+Before running the project, ensure you have:
 1.  **Python 3.10+** (with a virtual environment set up)
 2.  **Node.js 18+** (for the Next.js frontend)
-3.  **Docker** (to run ChromaDB)
-4.  **Ollama** (installed locally for embeddings & optional local generation).
+3.  **Docker** (to run PGVector)
+4.  **Ollama** (installed locally for embeddings & optional local generation)
 
 **Pull the required Ollama models:**
 ```bash
-ollama pull llama3.1
 ollama pull nomic-embed-text-v2-moe
 ```
 
-*(Note: If you plan to use OpenRouter for generation, ensure you add your `OPENROUTER_API_KEY` to `rag/api_models.py`)*
+**Set up your environment:**
+```bash
+cp .env.example .env
+# Edit .env and add your OPENROUTER_API_KEY
+```
 
 ---
 
-## 🚀 Execution Steps
+## 🚀 Running the Project
 
-You will need three terminal windows to run the different parts of the stack.
-
-### Step 1: Initialize the Database
-Open terminal 1, navigate to the root directory, and start ChromaDB:
+### Step 1: Start the Database
 ```bash
-docker compose up -d chromadb
+docker compose up -d
 ```
 
-### Step 2: Initialize the Backend API
-Open terminal 2, activate your python virtual environment, and run:
+### Step 2: Install Python Dependencies
 ```bash
 pip install -r requirements.txt
-uvicorn app:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-### Step 3: Initialize the Frontend UI
-Open terminal 3, navigate to the `frontend` folder, and run:
+### Step 3: Start the Backend API
+```bash
+python -m src.server.app
+```
+
+### Step 4: Start the Frontend UI
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-You can now access the interface at **http://localhost:3000**.
+Access the interface at **http://localhost:3000**.
 
 ---
 
-## 📚 Data Indexing Operations
+## 📚 Data Indexing
 
 To populate the vector database with your documents:
 
-1.  Place your target PDF in the root folder (e.g., `fake_company.pdf`).
-2.  Open `index_data.py` and ensure the `pdf_path` matches your target file.
-3.  Execute the indexer:
+1.  Place your PDF in the `docs/` folder.
+2.  Edit `scripts/index_data.py` and update the `pdf_path` variable.
+3.  Run the indexer:
 ```bash
-python3 index_data.py
+python -m scripts.index_data
 ```
 
-To perform a hard reset and wipe the database:
+To **reset** the database (wipe everything):
 ```bash
-python3 reset_db.py
+python -m scripts.reset_db
+```
+
+To **clear only the semantic cache** (keep document index):
+```bash
+python -m scripts.clean_cache
 ```

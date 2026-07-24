@@ -1,25 +1,34 @@
-# Python
+# ── Python ────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg-info/
+dist/
+build/
 
-# Environments
+# ── Environments ──────────────────────────────────────────
 .env
 .venv
 env/
 venv/
 ENV/
 
-# Database Data
+# ── Database Data ─────────────────────────────────────────
 chroma_data/
 *.sqlite3
 
-# OS Files
+# ── OS Files ──────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# Do NOT ignore PDFs, txts, or the study guide specifically
+# ── IDE ───────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Do NOT ignore docs, PDFs, or the env example ─────────
 !*.pdf
 !*.txt
-!RAG_STUDY_GUIDE.md
+!.env.example
