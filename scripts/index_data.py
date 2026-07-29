@@ -1,9 +1,9 @@
 """Index documents into the vector database."""
 
 from langchain_ollama import OllamaEmbeddings
-from src.core.document_loader import load_pdf_document
-from src.core.db_connection import get_vector_store
-from src.core.indexing import split_and_index
+from src.rag.document_loader import load_pdf_document
+from src.rag.db_connection import get_vector_store
+from src.rag.indexing import split_and_index
 from src.config.settings import EMBEDDING_MODEL
 
 def index_my_data():

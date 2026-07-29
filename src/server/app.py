@@ -26,7 +26,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 from langgraph.checkpoint.postgres import PostgresSaver
-from src.core.cache import semantic_cache
+from src.rag.cache import semantic_cache
 from src.config.settings import (
     OPENROUTER_API_KEY, OPENROUTER_BASE_URL,
     AGENT_MODEL, API_HOST, API_PORT,

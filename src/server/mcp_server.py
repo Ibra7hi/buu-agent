@@ -20,9 +20,10 @@ from typing import Optional
 from mcp.server.fastmcp import FastMCP
 from langchain_ollama import OllamaEmbeddings
 
-from src.core.db_connection import get_vector_store
-from src.core.hybrid_retriever import create_hybrid_retriever
-from src.core.query_rewriter import create_query_rewriter
+from src.rag.db_connection import get_vector_store
+from src.rag.hybrid_retriever import create_hybrid_retriever
+from src.rag.query_rewriter import create_query_rewriter
+from src.rag.retrieval import RAGPipeline
 from src.config.settings import EMBEDDING_MODEL
 
 # ── Initialize the MCP Server ──────────────────────────────────────
@@ -36,6 +37,9 @@ print("🔧 MCP Server: Initializing RAG backend...", file=sys.stderr)
 embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
 vector_store = get_vector_store(embedding_function=embeddings)
 hybrid_retriever = create_hybrid_retriever(vector_store)
+
+# Create the full pipeline (Hybrid + Reranker)
+rag_pipeline = RAGPipeline(hybrid_retriever)
 
 # Initialize query rewriter (rewrites user queries → optimized search queries)
 rewrite_query = create_query_rewriter()
@@ -51,8 +55,9 @@ print("✅ MCP Server: RAG backend ready.\n", file=sys.stderr)
 def retrieve_context(query: str, metadata_filter: Optional[dict] = None) -> str:
     """Retrieve information from indexed documents to help answer a query.
 
-    Uses a hybrid search (BM25 keyword + semantic vector) for best results.
-    The query is automatically rewritten to optimize retrieval quality.
+    Uses a hybrid search (BM25 keyword + semantic vector) followed by 
+    a cross-encoder reranker for best results. The query is automatically 
+    rewritten to optimize retrieval quality.
 
     Args:
         query: The search query to find relevant context.
@@ -69,10 +74,9 @@ def retrieve_context(query: str, metadata_filter: Optional[dict] = None) -> str:
 
     # Rewrite the query for better retrieval
     optimized_query = rewrite_query(query)
-    # optimized_query = query # BYPASSING QUERY REWRITER FOR TESTING
 
-    # Run the hybrid retriever (BM25 + semantic with RRF fusion)
-    retrieved_docs = hybrid_retriever.invoke(optimized_query, metadata_filter=filter_dict)
+    # Run the full RAG pipeline (Hybrid + Reranking)
+    retrieved_docs = rag_pipeline.retrieve(optimized_query, metadata_filter=filter_dict)
 
     if not retrieved_docs:
         return "No matching documents found after filtering."

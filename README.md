@@ -40,7 +40,7 @@ RAG/
 │   │   ├── app.py               # FastAPI orchestrator (the main backend)
 │   │   └── mcp_server.py        # MCP tool server (RAG tools)
 │   │
-│   ├── core/                    # Core RAG pipeline
+│   ├── rag/                     # Core RAG pipeline
 │   │   ├── db_connection.py     # PGVector connection factory
 │   │   ├── document_loader.py   # PDF/Web document ingestion
 │   │   ├── indexing.py          # Semantic chunking & vector indexing

@@ -20,6 +20,9 @@ rm -rf App/
 echo "🗑️  Removing old rag/ directory..."
 rm -rf rag/
 
+echo "🗑️  Removing temporary src/core/ directory..."
+rm -rf src/core/
+
 echo "🗑️  Removing old 'reset & index/' directory..."
 rm -rf "reset & index"/
 
