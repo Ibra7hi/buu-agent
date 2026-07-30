@@ -22,14 +22,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
+from src.core.agent_graph import build_custom_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 from langgraph.checkpoint.postgres import PostgresSaver
 from src.rag.cache import semantic_cache
 from src.config.settings import (
     OPENROUTER_API_KEY, OPENROUTER_BASE_URL,
-    AGENT_MODEL, API_HOST, API_PORT,
+    AGENT_MODEL, API_HOST, API_PORT,DB_CONNECTION_STRING
 )
 
 
@@ -105,10 +105,11 @@ async def lifespan(app: FastAPI):
     print(f"✅ Discovered {len(tools)} tool(s): {[t.name for t in tools]}")
 
     # Step B: Initialize persistent memory (PostgreSQL checkpointer)
-    with PostgresSaver.from_conn_string("")
+    
+    with PostgresSaver.from_conn_string(DB_CONNECTION_STRING) as checkpointer:
 
-    # Step C: Create the ReAct Agent with discovered tools
-    agent = create_react_agent(model, tools, prompt=SYSTEM_PROMPT, checkpointer=checkpointer)
+    # Step C: Create the custom StateGraph Agent with discovered tools
+    agent = build_custom_agent(model, tools, system_prompt=SYSTEM_PROMPT, checkpointer=checkpointer)
     print("🤖 Agent is ready with dynamically loaded MCP tools!\n")
 
     yield  # ── Application runs here ──
